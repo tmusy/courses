@@ -1,34 +1,39 @@
-import urllib
-import zipfile
 import os
 from os.path import expanduser, join
+from keras.preprocessing.image import img_to_array
+
+try:
+    from PIL import Image as pil_image
+except ImportError:
+    pil_image = None
+
 home = expanduser("~")
 datasets_root = join(home, 'datasets')
 
 
-def getunzipped(theurl, thedir):
-  name = os.path.join(thedir, 'tmp.zip')
-  try:
-    name, hdrs = urllib.urlretrieve(theurl, name)
-  except IOError, e:
-    print "Can't retrieve %r to %r: %s" % (theurl, thedir, e)
-    return
-  try:
-    z = zipfile.ZipFile(name)
-  except zipfile.error, e:
-    print "Bad zipfile (from %r): %s" % (theurl, e)
-    return
-  for n in z.namelist():
-    dest = os.path.join(thedir, n)
-    destdir = os.path.dirname(dest)
-    if not os.path.isdir(destdir):
-      os.makedirs(destdir)
-    data = z.read(n)
-    f = open(dest, 'w')
-    f.write(data)
-    f.close()
-  z.close()
-  os.unlink(name)
+def load_img(path, grayscale=False, target_size=None):
+    """Loads an image into PIL format.
+    # Arguments
+        path: Path to image file
+        grayscale: Boolean, whether to load the image as grayscale.
+        target_size: Either `None` (default to original size)
+            or tuple of ints `(img_height, img_width)`.
+    # Returns
+        A PIL Image instance.
+    # Raises
+        ImportError: if PIL is not available.
+    """
+    if pil_image is None:
+        raise ImportError('Could not import PIL.Image. '
+                          'The use of `array_to_img` requires PIL.')
+    img = pil_image.open(path)
+    if grayscale:
+        img = img.convert('L')
+    else:  # Ensure 3 channel even when loaded image is grayscale
+        img = img.convert('RGB')
+    if target_size:
+        img = img.resize((target_size[1], target_size[0]))
+    return img
 
 
 class Datasets(object):
@@ -52,16 +57,25 @@ class Datasets(object):
         return self.datasets
 
     def load_data(self, name):
-        pass
+        X = []
+        y = []
+        pictures_dir = self.datasets.get(name)
+        for dir_name, subdirs, files in os.walk(pictures_dir + '/sample'):
+            label = dir_name.split('/')[-1]
+            for fname in files:
+                if fname.endswith('jpg'):
+                    img = load_img(os.path.join(dir_name, fname))
+                    arr = img_to_array(img)
+                    X.append(arr)
+                    y.append(label)
+        return X, y
 
     def register_dataset(self, name, url_train, url_test=''):
-        getunzipped(url_train, self.datasets_root)
+        pass
 
 
 if __name__ == '__main__':
     datasets = Datasets()
     ds = datasets.list()
     print(ds)
-    dg_submission = 'https://www.kaggle.com/c/dogs-vs-cats/download/sampleSubmission.csv'
-    dg_train = 'https://www.kaggle.com/c/dogs-vs-cats/download/train.zip'
-    datasets.register_dataset('dogscats', dg_train)
+    datasets.load_data('dogscats')
