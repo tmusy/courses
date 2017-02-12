@@ -56,11 +56,20 @@ class Datasets(object):
     def list(self):
         return self.datasets
 
+    def get_X_filenames(self, directory, ending='jpg'):
+        fnames = []
+
+        for dir_name, subdirs, files in os.walk(directory):
+            for fname in files:
+                if fname.endswith(ending):
+                    fnames.append(os.path.join(dir_name, fname))
+        return fnames
+
     def load_data(self, name):
         X = []
         y = []
         pictures_dir = self.datasets.get(name)
-        for dir_name, subdirs, files in os.walk(pictures_dir + '/sample'):
+        for dir_name, subdirs, files in os.walk(pictures_dir + '/train'):
             label = dir_name.split('/')[-1]
             for fname in files:
                 if fname.endswith('jpg'):
@@ -78,4 +87,5 @@ if __name__ == '__main__':
     datasets = Datasets()
     ds = datasets.list()
     print(ds)
-    datasets.load_data('dogscats')
+    pictures_dir = datasets.datasets.get('dogscats')
+    fnames = datasets.get_X_filenames(os.path.join(pictures_dir, 'train'))
