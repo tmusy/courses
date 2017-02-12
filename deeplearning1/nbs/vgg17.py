@@ -3,7 +3,7 @@ from keras.models import Sequential
 from keras.layers import Lambda, ZeroPadding2D, Convolution2D, MaxPooling2D, Flatten, Dense, Dropout
 from keras.utils.data_utils import get_file
 from keras.optimizers import Adam
-from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing import image
 
 
 vgg_mean = np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((1, 1, 3))
@@ -33,7 +33,7 @@ class VGG17(object):
     def _create_model(self):
         model = self.model
         # input layer that normalize the input
-        model.add(Lambda(vgg_preprocess, input_shape=(3, 224, 224)))
+        model.add(Lambda(vgg_preprocess, input_shape=(224, 224, 3)))
 
         # hidden layers
         self._conv_block(2, 64)
@@ -51,8 +51,10 @@ class VGG17(object):
         # output layer
         model.add(Dense(1028, activation='softmax'))
 
-    def load_weights(self, fname='http://www.platform.ai/models/vgg16.h5'):
-        self.model.load_weights(get_file(fname, self.FILE_PATH + fname, cache_subdir='models'))
+    def load_weights(self, source='http://www.platform.ai/models/vgg16.h5'):
+        fname = source.split('/')[-1]
+        weights = get_file(fname, source, cache_subdir='models')
+        self.model.load_weights(weights)
 
     def finetune(self, n_classes):
         model = self.model
@@ -76,10 +78,23 @@ class VGG17(object):
                                  validation_data=val_batch_generator,
                                  nb_val_samples=val_batch_generator.nb_sample)
 
-    def get_batch_generator(self, directory, target_size=(250, 250), batch_size=32, class_mode='categorical'):
-        gen = ImageDataGenerator()
-        gen.flow_from_directory(directory,
-                                target_size=target_size,
-                                batch_size=batch_size,
-                                class_mode=class_mode)
-        return gen
+    def get_batch_generator(self, directory, target_size=(224, 224), shuffle=True,
+                            batch_size=32, class_mode='categorical'):
+        gen = image.ImageDataGenerator()
+        return gen.flow_from_directory(directory,
+                                       target_size=target_size,
+                                       shuffle=shuffle,
+                                       batch_size=batch_size,
+                                       class_mode=class_mode)
+
+
+if __name__ == '__main__':
+    path = "data/redux/"
+    path = '/Users/musy/datasets/dogscats/sample/'
+    vgg = VGG17()
+    vgg.finetune(n_classes=2)
+    vgg.load_weights()
+    vgg.fit(train_directory=path+'train',
+            val_directory=path+'valid',
+            nb_epoch=1)
+    model = vgg.model
