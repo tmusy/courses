@@ -4,6 +4,7 @@ from keras.layers import Lambda, ZeroPadding2D, Convolution2D, MaxPooling2D, Fla
 from keras.utils.data_utils import get_file
 from keras.optimizers import Adam
 from keras.preprocessing import image
+import h5py
 
 
 vgg_mean = np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((1, 1, 3))
@@ -93,8 +94,13 @@ if __name__ == '__main__':
     path = '/Users/musy/datasets/dogscats/sample/'
     vgg = VGG17()
     vgg.finetune(n_classes=2)
-    vgg.load_weights()
-    vgg.fit(train_directory=path+'train',
-            val_directory=path+'valid',
-            nb_epoch=1)
+    # vgg.load_weights()
+    # vgg.fit(train_directory=path+'train',
+    #         val_directory=path+'valid',
+    #         nb_epoch=1)
     model = vgg.model
+
+    from os.path import expanduser
+    home = expanduser("~")
+    f = h5py.File(home+"/.keras/models/vgg16.h5", "r")
+    f.keys()
