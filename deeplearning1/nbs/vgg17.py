@@ -10,6 +10,7 @@ WEIGHTS_TF = 'https://github.com/fchollet/deep-learning-models/releases/download
 WEIGHTS_TF_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
 WEIGHTS_TH = 'http://www.platform.ai/models/vgg16.h5'
 vgg_mean = np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((1, 1, 3))
+vgg_mean = np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((3, 1, 1))
 
 
 def vgg_preprocess(x):
@@ -19,10 +20,11 @@ def vgg_preprocess(x):
 
 class VGG17(object):
 
-    def __init__(self):
+    def __init__(self, input_shape=(224, 224, 3)):
         """
         Creates the VGG16 model.
         """
+        self.input_shape = input_shape
         self.model = Sequential()
         self._create_model()
 
@@ -36,7 +38,7 @@ class VGG17(object):
     def _create_model(self):
         model = self.model
         # input layer that normalize the input
-        model.add(Lambda(vgg_preprocess, input_shape=(224, 224, 3)))
+        model.add(Lambda(vgg_preprocess, input_shape=self.input_shape))
 
         # hidden layers
         self._conv_block(2, 64)
@@ -94,12 +96,12 @@ class VGG17(object):
 if __name__ == '__main__':
     path = "data/redux/"
     path = '/Users/musy/datasets/dogscats/sample/'
-    vgg = VGG17()
-    vgg.load_weights()
+    vgg = VGG17(input_shape=(3, 224, 224))
+    vgg.load_weights(WEIGHTS_TH)
     vgg.finetune(n_classes=2)
     vgg.fit(train_directory=path+'train',
             val_directory=path+'valid',
-            nb_epoch=1)
+            nb_epoch=2)
     model = vgg.model
 
     # from os.path import expanduser
