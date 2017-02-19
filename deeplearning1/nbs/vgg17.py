@@ -6,7 +6,9 @@ from keras.optimizers import Adam
 from keras.preprocessing import image
 import h5py
 
-
+WEIGHTS_TF = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
+WEIGHTS_TF_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+WEIGHTS_TH = 'http://www.platform.ai/models/vgg16.h5'
 vgg_mean = np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((1, 1, 3))
 
 
@@ -50,9 +52,9 @@ class VGG17(object):
         model.add(Dropout(0.5))
 
         # output layer
-        model.add(Dense(1028, activation='softmax'))
+        model.add(Dense(1000, activation='softmax'))
 
-    def load_weights(self, source='http://www.platform.ai/models/vgg16.h5'):
+    def load_weights(self, source=WEIGHTS_TF):
         fname = source.split('/')[-1]
         weights = get_file(fname, source, cache_subdir='models')
         self.model.load_weights(weights)
@@ -93,14 +95,14 @@ if __name__ == '__main__':
     path = "data/redux/"
     path = '/Users/musy/datasets/dogscats/sample/'
     vgg = VGG17()
+    vgg.load_weights()
     vgg.finetune(n_classes=2)
-    # vgg.load_weights()
-    # vgg.fit(train_directory=path+'train',
-    #         val_directory=path+'valid',
-    #         nb_epoch=1)
+    vgg.fit(train_directory=path+'train',
+            val_directory=path+'valid',
+            nb_epoch=1)
     model = vgg.model
 
-    from os.path import expanduser
-    home = expanduser("~")
-    f = h5py.File(home+"/.keras/models/vgg16.h5", "r")
-    f.keys()
+    # from os.path import expanduser
+    # home = expanduser("~")
+    # f = h5py.File(home+"/.keras/models/vgg16.h5", "r")
+    # f.keys()
